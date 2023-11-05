@@ -1,0 +1,12 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/adlerhurst/proto-gen-go-cli/gen
+plugins:
+  - plugin: go
+    out: gen
+    opt: paths=source_relative
+  - plugin: go-cli
+    out: gen
+    opt: paths=source_relative

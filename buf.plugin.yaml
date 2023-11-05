@@ -1,0 +1,3 @@
+version: v1
+name: github.com/adlerhurst/go-cli
+plugin_version: v0.1.0

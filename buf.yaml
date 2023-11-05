@@ -1,0 +1,12 @@
+version: v1
+name: buf.build/adlerhurst/go-cli
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/adlerhurst/go-cli
+breaking:
+  use:
+    - FILE
+  ignore_unstable_packages: true
+lint:
+  use:
+    - DEFAULT
