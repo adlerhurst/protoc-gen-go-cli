@@ -1,12 +1,18 @@
 package main
 
 import (
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+
 	option "github.com/adlerhurst/protoc-gen-go-cli/gen/proto/adlerhurst/cli/v1alpha"
 
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type CLI struct {
@@ -30,26 +36,47 @@ type Arg struct {
 }
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", filepath.Base(os.Args[0]), err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	var opts protogen.Options
 
-	opts.Run(func(plugin *protogen.Plugin) error {
-		files := plugin.Files
-
-		// plugin, err := opts.New(plugin.Request)
-		// if err != nil {
-		// 	return err
-		// }
-		for _, file := range files {
-			if !file.Generate {
-				continue
-			}
-			if !file.Generate {
-				continue
-			}
-			generateFile(plugin, file)
+	if len(os.Args) > 1 {
+		return fmt.Errorf("unknown argument %q (this program should be run by protoc, not directly)", os.Args[1])
+	}
+	in, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return err
+	}
+	req := &pluginpb.CodeGeneratorRequest{}
+	if err := proto.Unmarshal(in, req); err != nil {
+		return err
+	}
+	gen, err := opts.New(req)
+	if err != nil {
+		return err
+	}
+	for _, file := range gen.Files {
+		if !file.Generate {
+			continue
 		}
-		return nil
-	})
+		generateFile(gen, file)
+	}
+
+	resp := gen.Response()
+	out, err := proto.Marshal(resp)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stdout.Write(out); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 const fileSuffix = "_cli.pb.go"
