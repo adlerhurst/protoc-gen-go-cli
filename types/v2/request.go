@@ -15,21 +15,6 @@ type Request struct {
 	Args []Field
 }
 
-// func (req *Request) UnmarshalArgs(cmd *cobra.Command, args []string) {
-// 	set := pflag.NewFlagSet("request", pflag.ContinueOnError)
-// 	for _, field := range req.Args {
-// 		field.AddFlag(set)
-// 	}
-
-// 	cmd.Flags().AddFlagSet(set)
-// 	cmd.DisableFlagParsing = false
-// 	if err := cmd.ParseFlags(args); err != nil {
-// 		DefaultConfig.Logger.Error("failed to parse flags", "cause", err)
-// 		os.Exit(1)
-// 	}
-
-// }
-
 func RequestFromProto(parent *Method, message *protogen.Message) *Request {
 	req := Request{
 		parent:  parent,

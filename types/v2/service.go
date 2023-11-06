@@ -29,21 +29,6 @@ func ServiceFromProto(service *protogen.Service) *Service {
 	return svc
 }
 
-// func (svc *Service) Command() *cobra.Command {
-// 	cmd := &cobra.Command{
-// 		Use:                string(svc.Desc.FullName().Name()),
-// 		Short:              string(svc.Comments.Leading),
-// 		Long:               string(svc.Comments.Leading) + string(svc.Comments.Trailing),
-// 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
-// 	}
-
-// 	for _, method := range svc.Methods {
-// 		cmd.AddCommand(method.Command())
-// 	}
-
-// 	return cmd
-// }
-
 var (
 	//go:embed service.tmpl
 	serviceDefinition string

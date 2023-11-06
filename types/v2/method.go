@@ -17,19 +17,6 @@ type Method struct {
 	Request *Request
 }
 
-// func (method *Method) Command() *cobra.Command {
-
-// 	cmd := &cobra.Command{
-// 		Use:                string(method.Desc.FullName().Name()),
-// 		Short:              method.Comments.Leading.String(),
-// 		Long:               string(method.Comments.Leading) + string(method.Comments.Trailing),
-// 		PreRun:             method.Request.UnmarshalArgs,
-// 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
-// 	}
-
-// 	return cmd
-// }
-
 func MethodFromProto(parent *Service, method *protogen.Method) *Method {
 	m := &Method{
 		parent: parent,
