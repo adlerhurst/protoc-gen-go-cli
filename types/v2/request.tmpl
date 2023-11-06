@@ -1,0 +1,15 @@
+func Unmarshal{{.Public}}(cmd *cobra.Command, args []string) {
+	set := pflag.NewFlagSet("request", pflag.ContinueOnError)
+
+	new(PathField).AddFlag(set)
+	{{range .Args -}}
+	(&{{.Construct}}).AddFlag(set)
+	{{end}}
+
+	cmd.Flags().AddFlagSet(set)
+	cmd.DisableFlagParsing = false
+	if err := cmd.ParseFlags(args); err != nil {
+		DefaultConfig.Logger.Error("failed to parse flags", "cause", err)
+		os.Exit(1)
+	}
+}

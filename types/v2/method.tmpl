@@ -1,0 +1,17 @@
+var (
+    {{.VarName}} = &cobra.Command{
+		Use:                "{{.Use}}",
+		Short:              `{{.Short}}`,
+		Long:               `{{.Long}}`,
+        PreRun:             Unmarshal{{.Request.Public}},
+        Run:                run{{.VarName}},
+		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
+		DisableFlagParsing: true,
+	}
+)
+
+func run{{.VarName}}(cmd *cobra.Command, args []string){
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		DefaultConfig.Logger.Info("flag", "name", f.Name, "value", f.Value.String(), "changed", f.Changed)
+	})
+}

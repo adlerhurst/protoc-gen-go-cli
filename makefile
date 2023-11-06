@@ -7,5 +7,5 @@ compile:
 	go install .
 
 generate-example: compile
-	$(RM) -r gen/proto/example
+	$(RM) -r gen/proto/example/*pb.go
 	buf generate --path proto/example

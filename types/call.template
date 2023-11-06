@@ -1,0 +1,47 @@
+var (
+    {{.ProtoName}}Command = &cobra.Command{
+        Use:                "{{.Name}}",
+        Short:              "{{.ShortDescription}}",
+        Long:               "{{.LongDescription}}",
+        Run:                {{.NamePrivate}},
+        // PreRun:             parsePushRequest,
+        FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
+        DisableFlagParsing: true,
+    }
+	{{.NamePrivate}}PayloadPath string
+	{{.NamePrivate}}Request *{{.ProtoName}}Request
+)
+
+func init() {
+	{{.ProtoName}}Command.Flags().StringVar(&{{.NamePrivate}}PayloadPath, "path", "", "path to the json payload of the call")
+	err := {{.ProtoName}}Command.MarkFlagFilename("path", ".json")
+	if err != nil {
+		config.Logger.Error("failed to mark flag filename", "cause", err)
+		os.Exit(1)
+	}
+}
+
+func {{.NamePrivate}}(cmd *cobra.Command, args []string) {
+	if err := parse{{.ProtoName}}Payload(); err != nil{
+		config.Logger.Error("failed to parse {{.NamePrivate}}Request", "cause", err)
+		os.Exit(1)
+	}
+	_, err := client.{{.ProtoName}}(cmd.Context(), {{.NamePrivate}}Request)
+	if err != nil {
+		config.Logger.Error("failed to {{.NamePrivate}}", "cause", err)
+		os.Exit(1)
+	}
+}
+
+func parse{{.ProtoName}}Payload() error {
+	payload, err := os.ReadFile({{.NamePrivate}}PayloadPath)
+	if err != nil {
+		return err
+	}
+
+	if err = protojson.Unmarshal(payload, {{.NamePrivate}}Request); err != nil {
+		return err
+	}
+
+	return nil
+}

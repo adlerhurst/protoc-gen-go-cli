@@ -1,0 +1,44 @@
+type Config struct {
+	Logger *slog.Logger
+	Host   string
+	Port   uint16
+}
+
+var (
+	config = Config{
+		Logger: slog.Default(),
+		Host:   "localhost",
+		Port:   8080,
+	}
+	{{if .ShouldGenerate}}
+	{{.Name}}Command = &cobra.Command{
+		Use:              "{{.Name}}",
+		Short:            "{{.ShortDescription}}",
+		Long:             "{{.LongDescription}}",
+	}
+	{{end}}
+
+	dialOpts = []grpc.DialOption{
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	target = net.JoinHostPort(config.Host, strconv.Itoa(int(config.Port)))
+)
+
+func init() {
+	viper.SetDefault("config", config)
+	{{if  .ShouldGenerate}}
+	AddCalls({{.Name}}Command)
+	{{end -}}
+}
+
+{{with .Commands}}
+func AddCalls(client *cobra.Command) {
+	{{range . -}}
+	client.AddCommand({{.Service}}Command)
+    {{end -}}
+}
+{{end -}}
+
+//TODO: add main so that it's directly executable

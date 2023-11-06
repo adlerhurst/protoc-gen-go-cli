@@ -1,16 +1,20 @@
 syntax = "proto3";
 
+import "proto/adlerhurst/cli/v1alpha/cli.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
 package example;
 
 option go_package = "gen/example";
-
-import "proto/adlerhurst/cli/v1alpha/cli.proto";
-
 option (cli.v1alpha.cli_name) = "example-cli";
 
+// This is an example service
+// The service does nothing
 service ExampleService {
-    option (cli.v1alpha.command_name) = "example-svc";
+    option (cli.v1alpha.command_name) = "example";
 
+    // I do absolutely nothing
     rpc Call(CallRequest) returns (CallResponse) {
         option (cli.v1alpha.call_name) = "myCall";
     };
@@ -19,13 +23,48 @@ service ExampleService {
     // rpc BidirectionalStream(stream BidirectionalStreamRequest) returns (stream BidirectionalStreamResponse);
 }
 
-service ExampleService2 {
+service Example2Service {
     rpc Call(CallRequest) returns (CallResponse);
 }
 
 message CallRequest {
+    message Nested {
+        string field = 1;
+    }
+    enum Wat {
+        WAT_UNSPECIFIED = 0;
+        WAT_WEISS = 1;
+        WAT_ICH = 2;
+    }
     string use_field_name = 1;
     string use_custom_name = 2 [(cli.v1alpha.arg_name) = "custom"];
+    Nested nested = 3;
+    repeated Nested rep_nest = 4;
+    google.protobuf.Timestamp created_at = 5 [(cli.v1alpha.ignore_fields) = true];
+    optional google.protobuf.Struct payload = 6 [(cli.v1alpha.ignore_fields) = true];
+    Wat wat = 7;
+    bool is_something = 8;
+    int32 i32 = 9;
+    uint32 ui32 = 10;
+    int64 i64 = 11;
+    uint64 ui64 = 12;
+    float fl = 13;
+    double dbl = 14;
+    bytes beiz = 15;
+    sint32 si32 = 16;
+    sint64 si64 = 17;
+    fixed32 f32 = 18;
+    fixed64 f64 = 19;
+    sfixed32 sf32 = 20;
+    sfixed64 sf64 = 21;
+    Some some = 22;
+    repeated double rep_s = 23;
+    repeated Wat rep_wat = 24;
+}
+
+enum Some {
+    SOME_UNSPECIFIED = 0;
+    SOME_SPECIFIED = 1;
 }
 
 message CallResponse {

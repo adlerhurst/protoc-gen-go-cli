@@ -1,0 +1,17 @@
+var (
+    {{.VarName}} = &cobra.Command{
+		Use:                "{{.Use}}",
+		Short:              `{{.Short}}`,
+		Long:               `{{.Long}}`,
+		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
+        DisableFlagParsing: true,
+	}
+)
+
+{{with .Methods -}}
+func init(){
+    {{range . -}}
+    {{$.VarName}}.AddCommand({{.VarName}})
+    {{end -}}
+}
+{{end}}

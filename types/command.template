@@ -1,0 +1,32 @@
+var (
+	{{.Service}}Command = &cobra.Command{
+		Use:              "{{.Name}}",
+		Short:            "{{.ShortDescription}}",
+		Long:             "{{.LongDescription}}",
+		PersistentPreRun: ConnectTo{{.Service}},
+	}
+
+	client {{.Service}}Client
+)
+
+func init() {
+	viper.SetDefault("config", config)
+    {{range .Calls}}
+	    {{$.Service}}Command.AddCommand({{.ProtoName}}Command)
+    {{end -}}
+
+}
+
+func ConnectTo{{.Service}}(cmd *cobra.Command, args []string) {
+	conn, err := grpc.Dial(
+		target,
+		dialOpts...,
+	)
+
+	if err != nil {
+		config.Logger.Warn("failed to connect to server", "cause", err)
+		os.Exit(1)
+	}
+
+	client = New{{.Service}}Client(conn)
+}
