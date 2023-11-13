@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ExampleService_Call_FullMethodName = "/example.ExampleService/Call"
+	ExampleService_Nested_FullMethodName = "/example.ExampleService/Nested"
 )
 
 // ExampleServiceClient is the client API for ExampleService service.
@@ -27,7 +27,11 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ExampleServiceClient interface {
 	// I do absolutely nothing
-	Call(ctx context.Context, in *CallRequest, opts ...grpc.CallOption) (*CallResponse, error)
+	//
+	//	rpc Call(CallRequest) returns (CallResponse) {
+	//	    option (cli.v1alpha.call_name) = "myCall";
+	//	};
+	Nested(ctx context.Context, in *NestedRequest, opts ...grpc.CallOption) (*NestedResponse, error)
 }
 
 type exampleServiceClient struct {
@@ -38,9 +42,9 @@ func NewExampleServiceClient(cc grpc.ClientConnInterface) ExampleServiceClient {
 	return &exampleServiceClient{cc}
 }
 
-func (c *exampleServiceClient) Call(ctx context.Context, in *CallRequest, opts ...grpc.CallOption) (*CallResponse, error) {
-	out := new(CallResponse)
-	err := c.cc.Invoke(ctx, ExampleService_Call_FullMethodName, in, out, opts...)
+func (c *exampleServiceClient) Nested(ctx context.Context, in *NestedRequest, opts ...grpc.CallOption) (*NestedResponse, error) {
+	out := new(NestedResponse)
+	err := c.cc.Invoke(ctx, ExampleService_Nested_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +56,11 @@ func (c *exampleServiceClient) Call(ctx context.Context, in *CallRequest, opts .
 // for forward compatibility
 type ExampleServiceServer interface {
 	// I do absolutely nothing
-	Call(context.Context, *CallRequest) (*CallResponse, error)
+	//
+	//	rpc Call(CallRequest) returns (CallResponse) {
+	//	    option (cli.v1alpha.call_name) = "myCall";
+	//	};
+	Nested(context.Context, *NestedRequest) (*NestedResponse, error)
 	mustEmbedUnimplementedExampleServiceServer()
 }
 
@@ -60,8 +68,8 @@ type ExampleServiceServer interface {
 type UnimplementedExampleServiceServer struct {
 }
 
-func (UnimplementedExampleServiceServer) Call(context.Context, *CallRequest) (*CallResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Call not implemented")
+func (UnimplementedExampleServiceServer) Nested(context.Context, *NestedRequest) (*NestedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Nested not implemented")
 }
 func (UnimplementedExampleServiceServer) mustEmbedUnimplementedExampleServiceServer() {}
 
@@ -76,20 +84,20 @@ func RegisterExampleServiceServer(s grpc.ServiceRegistrar, srv ExampleServiceSer
 	s.RegisterService(&ExampleService_ServiceDesc, srv)
 }
 
-func _ExampleService_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CallRequest)
+func _ExampleService_Nested_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NestedRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExampleServiceServer).Call(ctx, in)
+		return srv.(ExampleServiceServer).Nested(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ExampleService_Call_FullMethodName,
+		FullMethod: ExampleService_Nested_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExampleServiceServer).Call(ctx, req.(*CallRequest))
+		return srv.(ExampleServiceServer).Nested(ctx, req.(*NestedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -102,98 +110,8 @@ var ExampleService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ExampleServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Call",
-			Handler:    _ExampleService_Call_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/example/example.proto",
-}
-
-const (
-	Example2Service_Call_FullMethodName = "/example.Example2Service/Call"
-)
-
-// Example2ServiceClient is the client API for Example2Service service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type Example2ServiceClient interface {
-	Call(ctx context.Context, in *CallRequest, opts ...grpc.CallOption) (*CallResponse, error)
-}
-
-type example2ServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewExample2ServiceClient(cc grpc.ClientConnInterface) Example2ServiceClient {
-	return &example2ServiceClient{cc}
-}
-
-func (c *example2ServiceClient) Call(ctx context.Context, in *CallRequest, opts ...grpc.CallOption) (*CallResponse, error) {
-	out := new(CallResponse)
-	err := c.cc.Invoke(ctx, Example2Service_Call_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Example2ServiceServer is the server API for Example2Service service.
-// All implementations must embed UnimplementedExample2ServiceServer
-// for forward compatibility
-type Example2ServiceServer interface {
-	Call(context.Context, *CallRequest) (*CallResponse, error)
-	mustEmbedUnimplementedExample2ServiceServer()
-}
-
-// UnimplementedExample2ServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedExample2ServiceServer struct {
-}
-
-func (UnimplementedExample2ServiceServer) Call(context.Context, *CallRequest) (*CallResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Call not implemented")
-}
-func (UnimplementedExample2ServiceServer) mustEmbedUnimplementedExample2ServiceServer() {}
-
-// UnsafeExample2ServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to Example2ServiceServer will
-// result in compilation errors.
-type UnsafeExample2ServiceServer interface {
-	mustEmbedUnimplementedExample2ServiceServer()
-}
-
-func RegisterExample2ServiceServer(s grpc.ServiceRegistrar, srv Example2ServiceServer) {
-	s.RegisterService(&Example2Service_ServiceDesc, srv)
-}
-
-func _Example2Service_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CallRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(Example2ServiceServer).Call(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Example2Service_Call_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(Example2ServiceServer).Call(ctx, req.(*CallRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// Example2Service_ServiceDesc is the grpc.ServiceDesc for Example2Service service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var Example2Service_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "example.Example2Service",
-	HandlerType: (*Example2ServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Call",
-			Handler:    _Example2Service_Call_Handler,
+			MethodName: "Nested",
+			Handler:    _ExampleService_Nested_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

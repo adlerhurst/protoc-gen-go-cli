@@ -3,6 +3,7 @@ package example
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -13,7 +14,6 @@ import (
 
 type Field interface {
 	AddFlag(set *pflag.FlagSet)
-	Value() any
 }
 
 type field[V any] struct {
@@ -24,21 +24,15 @@ type field[V any] struct {
 	defaultValue V
 }
 
-func (f *field[V]) Value() any {
-	return *f.value
-}
-
 type PathField struct {
 	value *string
 }
 
 func (f *PathField) AddFlag(set *pflag.FlagSet) {
 	f.value = set.String("path", "", "path to the json file containing the request")
-	set.SetAnnotation("path", cobra.BashCompFilenameExt, []string{".json"})
-}
-
-func (f *PathField) Value() any {
-	return *f.value
+	if err := set.SetAnnotation("path", cobra.BashCompFilenameExt, []string{".json"}); err != nil {
+		DefaultConfig.Logger.Error("failed to set path annotation", "cause", err)
+	}
 }
 
 type StringField field[string]
@@ -193,6 +187,7 @@ func (enum *EnumField[E]) Type() string {
 	return "enum"
 }
 
+// TODO: implement pflag.SliceValue
 type EnumSliceField[E enum] field[[]E]
 
 func (enum *EnumSliceField[E]) AddFlag(set *pflag.FlagSet) {
@@ -262,4 +257,39 @@ func parseEnum[E enum](s string) (*E, error) {
 	}
 
 	return nil, errors.New("unknown enum variable")
+}
+
+type message interface {
+	String() string
+}
+
+type MessageField[M message] struct {
+	field[M]
+	fields []Field
+}
+
+func (message *MessageField[M]) AddFlag(set *pflag.FlagSet) {
+	message.value = new(M)
+	set.Var(message, message.Name, message.Usage)
+	// subFlags := pflag.NewFlagSet(message.Name, pflag.ExitOnError)
+	// for _, field := range message.fields {
+	// 	field.AddFlag(subFlags)
+	// }
+	// set.AddFlagSet(subFlags)
+}
+
+// Set Implements pflag.Value
+func (message *MessageField[M]) Set(s string) (err error) {
+	// message.value, err = parseMnum[M](s)
+	return err
+}
+
+// String Implements pflag.Value
+func (message MessageField[M]) String() string {
+	return fmt.Sprint(*message.value)
+}
+
+// Type Implements pflag.Value
+func (message MessageField[M]) Type() string {
+	return "message"
 }

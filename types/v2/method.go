@@ -15,6 +15,8 @@ type Method struct {
 	parent *Service
 	*protogen.Method
 	Request *Request
+
+	gen *protogen.GeneratedFile
 }
 
 func MethodFromProto(parent *Service, method *protogen.Method) *Method {
@@ -34,12 +36,12 @@ var (
 )
 
 func (method *Method) Generate(plugin *protogen.Plugin, file *protogen.File) (generated []*protogen.GeneratedFile, err error) {
-	gen := plugin.NewGeneratedFile(method.filename(file.GeneratedFilenamePrefix), file.GoImportPath)
-	generated = append(generated, gen)
+	method.gen = plugin.NewGeneratedFile(method.filename(file.GeneratedFilenamePrefix), file.GoImportPath)
+	generated = append(generated, method.gen)
 
-	header(gen, file)
-	method.imports(gen)
-	if err = executeTemplate(gen, methodTemplate, method); err != nil {
+	header(method.gen, file)
+	method.imports()
+	if err = executeTemplate(method.gen, methodTemplate, method); err != nil {
 		return nil, err
 	}
 
@@ -65,9 +67,9 @@ func (method *Method) filename(prefix string) string {
 	return builder.String()
 }
 
-func (*Method) imports(gen *protogen.GeneratedFile) {
-	gen.QualifiedGoIdent(protogen.GoImportPath("github.com/spf13/cobra").Ident("cobra"))
-	gen.QualifiedGoIdent(protogen.GoImportPath("github.com/spf13/pflag").Ident("pflag"))
+func (method *Method) imports() {
+	method.gen.QualifiedGoIdent(protogen.GoImportPath("github.com/spf13/cobra").Ident("cobra"))
+	method.gen.QualifiedGoIdent(protogen.GoImportPath("github.com/spf13/pflag").Ident("pflag"))
 }
 
 func (method *Method) Use() string {

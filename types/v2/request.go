@@ -6,54 +6,35 @@ import (
 	"text/template"
 
 	"google.golang.org/protobuf/compiler/protogen"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type Request struct {
 	parent *Method
 	*protogen.Message
-	Args []Field
+	Args       []Field
+	NestedArgs []NestedField
+	gen        *protogen.GeneratedFile
 }
 
 func RequestFromProto(parent *Method, message *protogen.Message) *Request {
-	req := Request{
+	req := &Request{
 		parent:  parent,
 		Message: message,
 	}
 
 	for _, msgField := range message.Fields {
-		var f Field
-		switch msgField.Desc.Kind() {
-		// TODO: case protoreflect.GroupKind: when are these fields used?
-		case protoreflect.EnumKind:
-			f = &EnumField{field: field{Field: msgField}}
-		case protoreflect.BoolKind:
-			f = &BoolField{field: field{Field: msgField}}
-		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-			f = &Int32Field{field: field{Field: msgField}}
-		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-			f = &Uint32Field{field: field{Field: msgField}}
-		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-			f = &Int64Field{field: field{Field: msgField}}
-		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-			f = &Uint64Field{field: field{Field: msgField}}
-		case protoreflect.FloatKind:
-			f = &FloatField{field: field{Field: msgField}}
-		case protoreflect.DoubleKind:
-			f = &DoubleField{field: field{Field: msgField}}
-		case protoreflect.StringKind:
-			f = &StringField{field: field{Field: msgField}}
-		case protoreflect.BytesKind:
-			f = &BytesField{field: field{Field: msgField}}
-		case protoreflect.MessageKind:
-
-		}
-		if f != nil {
-			req.Args = append(req.Args, f)
+		field := fieldFromProto(req, msgField)
+		if field != nil {
+			if nestedField, ok := field.(NestedField); ok {
+				DefaultConfig.Logger.Info("found")
+				req.NestedArgs = append(req.NestedArgs, nestedField)
+				continue
+			}
+			req.Args = append(req.Args, field)
 		}
 	}
 
-	return &req
+	return req
 }
 
 var (
@@ -63,15 +44,15 @@ var (
 )
 
 func (request *Request) Generate(plugin *protogen.Plugin, file *protogen.File) ([]*protogen.GeneratedFile, error) {
-	gen := plugin.NewGeneratedFile(request.filename(file.GeneratedFilenamePrefix), file.GoImportPath)
+	request.gen = plugin.NewGeneratedFile(request.filename(file.GeneratedFilenamePrefix), file.GoImportPath)
 
-	header(gen, file)
-	request.imports(gen)
-	if err := executeTemplate(gen, requestTemplate, request); err != nil {
+	header(request.gen, file)
+	request.imports(request.gen)
+	if err := executeTemplate(request.gen, requestTemplate, request); err != nil {
 		return nil, err
 	}
 
-	return []*protogen.GeneratedFile{gen}, nil
+	return []*protogen.GeneratedFile{request.gen}, nil
 }
 
 func (request *Request) filename(prefix string) string {
@@ -91,7 +72,6 @@ func (request *Request) filename(prefix string) string {
 
 func (*Request) imports(gen *protogen.GeneratedFile) {
 	gen.QualifiedGoIdent(protogen.GoImportPath("github.com/spf13/cobra").Ident("cobra"))
-	gen.QualifiedGoIdent(protogen.GoImportPath("github.com/spf13/pflag").Ident("pflag"))
 	gen.QualifiedGoIdent(protogen.GoImportPath("os").Ident("os"))
 }
 

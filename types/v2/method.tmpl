@@ -3,12 +3,29 @@ var (
 		Use:                "{{.Use}}",
 		Short:              `{{.Short}}`,
 		Long:               `{{.Long}}`,
-        PreRun:             Unmarshal{{.Request.Public}},
+        PreRun:             Unmarshal,//{{.Request.Public}},
         Run:                run{{.VarName}},
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
 		DisableFlagParsing: true,
 	}
 )
+
+func init() {
+	set := pflag.NewFlagSet("request", pflag.ContinueOnError)
+
+	new(PathField).AddFlag(set)
+	{{range .Request.Args -}}
+	(&{{.Construct}}).AddFlag(set)
+	{{end -}}
+	{{.VarName}}.Flags().AddFlagSet(set)
+
+	nestedSet := pflag.NewFlagSet("nested", pflag.ContinueOnError)
+
+	{{range .Request.NestedArgs -}}
+	(&{{.Construct}}).AddFlag(nestedSet)
+	{{end -}}
+	{{.VarName}}.Flags().AddFlagSet(nestedSet)
+}
 
 func run{{.VarName}}(cmd *cobra.Command, args []string){
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
