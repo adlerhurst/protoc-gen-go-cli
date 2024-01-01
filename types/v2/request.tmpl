@@ -1,7 +1,35 @@
-func Unmarshal{{.Public}}(cmd *cobra.Command, args []string) {
-	cmd.DisableFlagParsing = false
-	if err := cmd.ParseFlags(args); err != nil {
+func (x *{{.GoIdent.GoName}}) ParseFlags(cmd *cobra.Command, args []string) {
+	set := pflag.NewFlagSet("request", pflag.ContinueOnError)
+	cmd.Flags().AddFlagSet(set)
+
+	{{range .Flags -}}
+	_{{.GoName}} := {{.Construct}}
+	{{end}}
+	
+
+	flagIndexes := fieldIndexes(args, {{.NestedFieldFlagNames}})
+
+	// parse primitive flags before first nested
+	if err := set.Parse(flagIndexes.primitives().args); err != nil {
 		DefaultConfig.Logger.Error("failed to parse flags", "cause", err)
 		os.Exit(1)
 	}
+
+	{{range .Flags -}}
+	x.{{.GoName}} = {{if not .IsMessage}}*{{end}}_{{.GoName}}.Value
+	{{end}}
+
+	{{range .NestedArgs}}
+	if flagIdx := flagIndexes.lastByName("{{.Name}}"); flagIdx != nil {
+		x.{{.GoName}} = new({{.Message.GoIdent.GoName}})
+		x.{{.GoName}}.ParseFlags(flagIdx.args)
+	}
+	{{end -}}
+
+	{{range .NestedRepeatedArgs}}
+	for _, idx := range flagIndexes.byName("{{.Name}}") {
+		x.{{.GoName}} = append(x.{{.GoName}}, new({{.Message.GoIdent.GoName}}))
+		x.{{.GoName}}[len(x.{{.GoName}})-1].ParseFlags(idx.args)
+	}
+	{{end -}}
 }

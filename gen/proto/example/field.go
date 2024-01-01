@@ -19,8 +19,8 @@ type Field interface {
 type field[V any] struct {
 	Name  string
 	Usage string
+	Value *V
 
-	value        *V
 	defaultValue V
 }
 
@@ -38,123 +38,103 @@ func (f *PathField) AddFlag(set *pflag.FlagSet) {
 type StringField field[string]
 
 func (f *StringField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.String(f.Name, f.defaultValue, f.Usage)
+	set.StringVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type StringSliceField field[[]string]
 
 func (f *StringSliceField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.StringSlice(f.Name, f.defaultValue, f.Usage)
+	set.StringSliceVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type BoolField field[bool]
 
 func (f *BoolField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Bool(f.Name, f.defaultValue, f.Usage)
+	set.BoolVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type BoolSliceField field[[]bool]
 
 func (f *BoolSliceField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.BoolSlice(f.Name, f.defaultValue, f.Usage)
+	set.BoolSliceVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type Int32Field field[int32]
 
 func (f *Int32Field) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Int32(f.Name, f.defaultValue, f.Usage)
+	set.Int32Var(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type Int32SliceField field[[]int32]
 
 func (f *Int32SliceField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Int32Slice(f.Name, f.defaultValue, f.Usage)
+	set.Int32SliceVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type Uint32Field field[uint32]
 
 func (f *Uint32Field) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Uint32(f.Name, f.defaultValue, f.Usage)
+	set.Uint32Var(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type Uint32SliceField field[[]uint]
 
 func (f *Uint32SliceField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.UintSlice(f.Name, f.defaultValue, f.Usage)
-}
-
-func (f *Uint32SliceField) Value() any {
-	numbers := make([]int32, len(*f.value))
-
-	for i, n := range *f.value {
-		numbers[i] = int32(n)
-	}
-
-	return numbers
+	set.UintSliceVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type Int64Field field[int64]
 
 func (f *Int64Field) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Int64(f.Name, f.defaultValue, f.Usage)
+	set.Int64Var(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type Int64SliceField field[[]int64]
 
 func (f *Int64SliceField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Int64Slice(f.Name, f.defaultValue, f.Usage)
+	set.Int64SliceVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type Uint64Field field[uint64]
 
 func (f *Uint64Field) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Uint64(f.Name, f.defaultValue, f.Usage)
+	set.Uint64Var(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type Uint64SliceField field[[]uint]
 
 func (f *Uint64SliceField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.UintSlice(f.Name, f.defaultValue, f.Usage)
-}
-
-func (f *Uint64SliceField) Value() any {
-	numbers := make([]uint64, len(*f.value))
-
-	for i, n := range *f.value {
-		numbers[i] = uint64(n)
-	}
-
-	return numbers
+	set.UintSliceVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type FloatField field[float32]
 
 func (f *FloatField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Float32(f.Name, f.defaultValue, f.Usage)
+	set.Float32Var(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type FloatSliceField field[[]float32]
 
 func (f *FloatSliceField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Float32Slice(f.Name, f.defaultValue, f.Usage)
+	set.Float32SliceVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type DoubleField field[float64]
 
 func (f *DoubleField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Float64(f.Name, f.defaultValue, f.Usage)
+	set.Float64Var(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type DoubleSliceField field[[]float64]
 
 func (f *DoubleSliceField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.Float64Slice(f.Name, f.defaultValue, f.Usage)
+	set.Float64SliceVar(f.Value, f.Name, f.defaultValue, f.Usage)
 }
 
 type BytesField field[[]byte]
 
 func (f *BytesField) AddFlag(set *pflag.FlagSet) {
-	f.value = set.BytesBase64(f.Name, f.defaultValue, f.Usage+" base64 (RFC 4648) encoded")
+	set.BytesBase64Var(f.Value, f.Name, f.defaultValue, f.Usage+" base64 (RFC 4648) encoded")
 }
 
 type enum interface {
@@ -167,19 +147,19 @@ type EnumField[E enum] field[E]
 
 func (enum *EnumField[E]) AddFlag(set *pflag.FlagSet) {
 	e := new(E)
-	enum.value = e
+	enum.Value = e
 	set.Var(enum, enum.Name, enum.Usage)
 }
 
 // Set Implements pflag.Value
 func (enum *EnumField[E]) Set(s string) (err error) {
-	enum.value, err = parseEnum[E](s)
+	enum.Value, err = parseEnum[E](s)
 	return err
 }
 
 // String Implements pflag.Value
 func (enum *EnumField[E]) String() string {
-	return (*enum.value).String()
+	return (*enum.Value).String()
 }
 
 // Type Implements pflag.Value
@@ -192,7 +172,7 @@ type EnumSliceField[E enum] field[[]E]
 
 func (enum *EnumSliceField[E]) AddFlag(set *pflag.FlagSet) {
 	e := new([]E)
-	enum.value = e
+	enum.Value = e
 	set.Var(enum, enum.Name, enum.Usage)
 }
 
@@ -218,19 +198,19 @@ func (enum *EnumSliceField[E]) Set(s string) error {
 		values[i] = *e
 	}
 
-	*enum.value = append(*enum.value, values...)
+	*enum.Value = append(*enum.Value, values...)
 
 	return nil
 }
 
 // String Implements pflag.Value
 func (enum *EnumSliceField[E]) String() string {
-	if len(*enum.value) == 0 {
+	if len(*enum.Value) == 0 {
 		return ""
 	}
-	list := make([]string, len(*enum.value))
+	list := make([]string, len(*enum.Value))
 
-	for i, e := range *enum.value {
+	for i, e := range *enum.Value {
 		list[i] = e.String()
 	}
 
@@ -269,8 +249,11 @@ type MessageField[M message] struct {
 }
 
 func (message *MessageField[M]) AddFlag(set *pflag.FlagSet) {
-	message.value = new(M)
-	set.Var(message, message.Name, message.Usage)
+	message.Value = new(M)
+	// set.Var(message, message.Name, message.Usage)
+	for _, field := range message.fields {
+		field.AddFlag(set)
+	}
 	// subFlags := pflag.NewFlagSet(message.Name, pflag.ExitOnError)
 	// for _, field := range message.fields {
 	// 	field.AddFlag(subFlags)
@@ -286,7 +269,7 @@ func (message *MessageField[M]) Set(s string) (err error) {
 
 // String Implements pflag.Value
 func (message MessageField[M]) String() string {
-	return fmt.Sprint(*message.value)
+	return fmt.Sprint(*message.Value)
 }
 
 // Type Implements pflag.Value

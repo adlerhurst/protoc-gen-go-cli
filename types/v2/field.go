@@ -17,6 +17,7 @@ type Field interface {
 type NestedField interface {
 	Field
 	IsNested()
+	IsRepeated() bool
 }
 
 func fieldFromProto(req *Request, msgField *protogen.Field) Field {
@@ -43,6 +44,15 @@ func fieldFromProto(req *Request, msgField *protogen.Field) Field {
 	case protoreflect.BytesKind:
 		return &BytesField{field: field{parent: req, Field: msgField}}
 	case protoreflect.MessageKind:
+		switch msgField.Desc.Message().FullName().Name() {
+		case "Struct":
+			return &StructField{field: field{parent: req, Field: msgField}}
+		case "Timestamp":
+			return &TimestampField{field: field{parent: req, Field: msgField}}
+		case "Any":
+			return &AnyField{field: field{parent: req, Field: msgField}}
+		}
+
 		msg := &MessageField{
 			importField: importField{
 				field: field{parent: req, Field: msgField},
@@ -50,8 +60,7 @@ func fieldFromProto(req *Request, msgField *protogen.Field) Field {
 			fields: make([]Field, len(msgField.Message.Fields)),
 		}
 
-		if msgField.Desc.Message().FullName().Name() == "Struct" ||
-			msgField.Desc.Message().FullName().Name() == "Any" {
+		if msgField.Desc.Message().FullName().Name() == "Any" {
 			DefaultConfig.Logger.Info("was recursive type", "name", msgField.Desc.Message().FullName().Name())
 			return nil
 		}
@@ -82,7 +91,13 @@ func (f field) Name() string {
 }
 
 func (f field) construct() string {
-	return `Name: "` + f.Name() + "\", Usage: `" + string(f.Comments.Leading) + "`"
+	f.Desc.Default()
+	return "(set, \"" + f.Name() + "\", `" + string(f.Comments.Leading) + "`)"
+	// return `Name: "` + f.Name() + "\", Usage: `" + string(f.Comments.Leading) + "`" + ", Value: &x." + f.GoName
+}
+
+func (f field) IsMessage() bool {
+	return f.Desc.Kind() == protoreflect.MessageKind
 }
 
 type StringField struct {
@@ -90,11 +105,11 @@ type StringField struct {
 }
 
 func (f *StringField) Construct() string {
-	name := "StringField"
+	name := "StringFlag"
 	if f.Desc.IsList() {
-		name = "StringSliceField"
+		name = "StringSliceFlag"
 	}
-	return name + `{` + f.field.construct() + `}`
+	return "New" + name + f.field.construct()
 }
 
 type BoolField struct {
@@ -102,11 +117,11 @@ type BoolField struct {
 }
 
 func (f *BoolField) Construct() string {
-	name := "BoolField"
+	name := "BoolFlag"
 	if f.Desc.IsList() {
-		name = "BoolSliceField"
+		name = "BoolSliceFlag"
 	}
-	return name + `{` + f.field.construct() + `}`
+	return "New" + name + f.field.construct()
 }
 
 type Int32Field struct {
@@ -114,11 +129,11 @@ type Int32Field struct {
 }
 
 func (f *Int32Field) Construct() string {
-	name := "Int32Field"
+	name := "Int32Flag"
 	if f.Desc.IsList() {
-		name = "Int32SliceField"
+		name = "Int32SliceFlag"
 	}
-	return name + `{` + f.field.construct() + `}`
+	return "New" + name + f.field.construct()
 }
 
 type Uint32Field struct {
@@ -126,11 +141,11 @@ type Uint32Field struct {
 }
 
 func (f *Uint32Field) Construct() string {
-	name := "Int32Field"
+	name := "Uint32Flag"
 	if f.Desc.IsList() {
-		name = "Int32SliceField"
+		name = "Uint32SliceFlag"
 	}
-	return name + `{` + f.field.construct() + `}`
+	return "New" + name + f.field.construct()
 }
 
 type Int64Field struct {
@@ -138,11 +153,11 @@ type Int64Field struct {
 }
 
 func (f *Int64Field) Construct() string {
-	name := "Int64Field"
+	name := "Int64Flag"
 	if f.Desc.IsList() {
-		name = "Int64SliceField"
+		name = "Int64SliceFlag"
 	}
-	return name + `{` + f.field.construct() + `}`
+	return "New" + name + f.field.construct()
 }
 
 type Uint64Field struct {
@@ -150,11 +165,11 @@ type Uint64Field struct {
 }
 
 func (f *Uint64Field) Construct() string {
-	name := "Uint64Field"
+	name := "Uint64Flag"
 	if f.Desc.IsList() {
-		name = "Uint64SliceField"
+		name = "Uint64SliceFlag"
 	}
-	return name + `{` + f.field.construct() + `}`
+	return "New" + name + f.field.construct()
 }
 
 type FloatField struct {
@@ -162,11 +177,11 @@ type FloatField struct {
 }
 
 func (f *FloatField) Construct() string {
-	name := "FloatField"
+	name := "FloatFlag"
 	if f.Desc.IsList() {
-		name = "FloatSliceField"
+		name = "FloatSliceFlag"
 	}
-	return name + `{` + f.field.construct() + `}`
+	return "New" + name + f.field.construct()
 }
 
 type DoubleField struct {
@@ -174,11 +189,11 @@ type DoubleField struct {
 }
 
 func (f *DoubleField) Construct() string {
-	name := "DoubleField"
+	name := "DoubleFlag"
 	if f.Desc.IsList() {
-		name = "DoubleSliceField"
+		name = "DoubleSliceFlag"
 	}
-	return name + `{` + f.field.construct() + `}`
+	return "New" + name + f.field.construct()
 }
 
 type BytesField struct {
@@ -186,11 +201,11 @@ type BytesField struct {
 }
 
 func (f *BytesField) Construct() string {
-	name := "BytesField"
+	name := "BytesFlag"
 	if f.Desc.IsList() {
-		name = "BytesSliceField"
+		name = "BytesSliceFlag"
 	}
-	return name + `{` + f.field.construct() + `}`
+	return "New" + name + f.field.construct()
 }
 
 type EnumField struct {
@@ -198,11 +213,11 @@ type EnumField struct {
 }
 
 func (f *EnumField) Construct() string {
-	name := "EnumField"
+	name := "EnumFlag"
 	if f.Desc.IsList() {
-		name = "EnumSliceField"
+		name = "EnumSliceFlag"
 	}
-	return name + `[` + f.Field.Enum.GoIdent.GoName + `]{` + f.field.construct() + `}`
+	return "New" + name + `[` + f.Field.Enum.GoIdent.GoName + `]` + f.field.construct()
 }
 
 type MessageField struct {
@@ -211,10 +226,10 @@ type MessageField struct {
 }
 
 func (f *MessageField) Construct() string {
-	name := "MessageField"
+	name := "MessageFlag"
 	// TODO: slice
 	// if f.Desc.IsList() {
-	// 	name = "MessageSliceField"
+	// 	name = "MessageSliceFlag"
 	// }
 
 	ident := f.Field.Message.GoIdent.GoName
@@ -237,3 +252,43 @@ func (f *MessageField) Construct() string {
 }
 
 func (*MessageField) IsNested() {}
+
+func (f *MessageField) IsRepeated() bool {
+	return f.Desc.IsList()
+}
+
+type StructField struct {
+	field
+}
+
+func (f *StructField) Construct() string {
+	name := "StructFlag"
+	if f.Desc.IsList() {
+		name = "StructSliceFlag"
+	}
+	return "New" + name + f.field.construct()
+}
+
+type TimestampField struct {
+	field
+}
+
+func (f *TimestampField) Construct() string {
+	name := "TimestampFlag"
+	if f.Desc.IsList() {
+		name = "TimestampSliceFlag"
+	}
+	return "New" + name + f.field.construct()
+}
+
+type AnyField struct {
+	field
+}
+
+func (f *AnyField) Construct() string {
+	name := "AnyFlag"
+	if f.Desc.IsList() {
+		name = "AnySliceFlag"
+	}
+	return "New" + name + f.field.construct()
+}

@@ -12,9 +12,12 @@
             "program": "${workspaceFolder}/gen/main.go",
             "args": [
                 // "--help"
-                // "help", "mycall"
+                "help", "mycall"
                 //  "mycall", "--id", "asdf"
-                 "mycall", "--rep_wat", "1,WAT_WEISS", "--rep_wat", "0,WAT_WEISS", "--rep_s", "0,1,2,3", "--wat", "WAT_WEISS", "--ui32", "123", "--path", "${workspaceFolder}/.vscode/call_request.json"
+                // "mycall", "--payload", "{\"test\": 123, \"asdf\": \"test\"}", "--created_at", "2024-01-01T20:38:24Z"
+                // "mycall", "--id", "123", "--nested", "--field", "asdf", "--nested", "--field", "hgdf"
+                // "mycall", "--something", "{\"@type\": \"hodor\", \"value\": \"eyJ0ZXN0IjogMTIzLCAiYXNkZiI6ICJ0ZXN0In0K\"}", "--nested", "--field", "bla", "--rep_nest", "--field", "asdf", "--rep_nest", "--field", "hgdf", "--nested", "--field", "blub"
+                //  "mycall", "--rep_wat", "1,WAT_WEISS", "--rep_wat", "0,WAT_WEISS", "--rep_s", "0,1,2,3", "--wat", "WAT_WEISS", "--ui32", "123",// "--path", "${workspaceFolder}/.vscode/call_request.json"
                 // "mycall", "--wat", "2", "--ui32", "123", "--path", "${workspaceFolder}/.vscode/call_request.json"
                 // "mycall", "--path", "${workspaceFolder}/.vscode/call_request.asdf"
             ]

@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	ExampleService_Call_FullMethodName   = "/example.ExampleService/Call"
 	ExampleService_Nested_FullMethodName = "/example.ExampleService/Nested"
 )
 
@@ -27,10 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ExampleServiceClient interface {
 	// I do absolutely nothing
-	//
-	//	rpc Call(CallRequest) returns (CallResponse) {
-	//	    option (cli.v1alpha.call_name) = "myCall";
-	//	};
+	Call(ctx context.Context, in *CallRequest, opts ...grpc.CallOption) (*CallResponse, error)
 	Nested(ctx context.Context, in *NestedRequest, opts ...grpc.CallOption) (*NestedResponse, error)
 }
 
@@ -40,6 +38,15 @@ type exampleServiceClient struct {
 
 func NewExampleServiceClient(cc grpc.ClientConnInterface) ExampleServiceClient {
 	return &exampleServiceClient{cc}
+}
+
+func (c *exampleServiceClient) Call(ctx context.Context, in *CallRequest, opts ...grpc.CallOption) (*CallResponse, error) {
+	out := new(CallResponse)
+	err := c.cc.Invoke(ctx, ExampleService_Call_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *exampleServiceClient) Nested(ctx context.Context, in *NestedRequest, opts ...grpc.CallOption) (*NestedResponse, error) {
@@ -56,10 +63,7 @@ func (c *exampleServiceClient) Nested(ctx context.Context, in *NestedRequest, op
 // for forward compatibility
 type ExampleServiceServer interface {
 	// I do absolutely nothing
-	//
-	//	rpc Call(CallRequest) returns (CallResponse) {
-	//	    option (cli.v1alpha.call_name) = "myCall";
-	//	};
+	Call(context.Context, *CallRequest) (*CallResponse, error)
 	Nested(context.Context, *NestedRequest) (*NestedResponse, error)
 	mustEmbedUnimplementedExampleServiceServer()
 }
@@ -68,6 +72,9 @@ type ExampleServiceServer interface {
 type UnimplementedExampleServiceServer struct {
 }
 
+func (UnimplementedExampleServiceServer) Call(context.Context, *CallRequest) (*CallResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Call not implemented")
+}
 func (UnimplementedExampleServiceServer) Nested(context.Context, *NestedRequest) (*NestedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Nested not implemented")
 }
@@ -82,6 +89,24 @@ type UnsafeExampleServiceServer interface {
 
 func RegisterExampleServiceServer(s grpc.ServiceRegistrar, srv ExampleServiceServer) {
 	s.RegisterService(&ExampleService_ServiceDesc, srv)
+}
+
+func _ExampleService_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CallRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExampleServiceServer).Call(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExampleService_Call_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExampleServiceServer).Call(ctx, req.(*CallRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ExampleService_Nested_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -109,6 +134,10 @@ var ExampleService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "example.ExampleService",
 	HandlerType: (*ExampleServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Call",
+			Handler:    _ExampleService_Call_Handler,
+		},
 		{
 			MethodName: "Nested",
 			Handler:    _ExampleService_Nested_Handler,

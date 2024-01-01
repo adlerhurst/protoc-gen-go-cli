@@ -11,9 +11,23 @@ import (
 type Request struct {
 	parent *Method
 	*protogen.Message
-	Args       []Field
-	NestedArgs []NestedField
-	gen        *protogen.GeneratedFile
+	Flags              []Field
+	NestedArgs         []NestedField
+	NestedRepeatedArgs []NestedField
+	gen                *protogen.GeneratedFile
+}
+
+func (r *Request) NestedFieldFlagNames() string {
+	names := make([]string, 0, len(r.NestedArgs)+len(r.NestedRepeatedArgs))
+
+	for _, arg := range r.NestedArgs {
+		names = append(names, `"`+arg.Name()+`"`)
+	}
+	for _, arg := range r.NestedRepeatedArgs {
+		names = append(names, `"`+arg.Name()+`"`)
+	}
+
+	return strings.Join(names, ", ")
 }
 
 func RequestFromProto(parent *Method, message *protogen.Message) *Request {
@@ -24,14 +38,20 @@ func RequestFromProto(parent *Method, message *protogen.Message) *Request {
 
 	for _, msgField := range message.Fields {
 		field := fieldFromProto(req, msgField)
-		if field != nil {
-			if nestedField, ok := field.(NestedField); ok {
-				DefaultConfig.Logger.Info("found")
-				req.NestedArgs = append(req.NestedArgs, nestedField)
-				continue
-			}
-			req.Args = append(req.Args, field)
+		if field == nil {
+			continue
 		}
+		if nestedField, ok := field.(NestedField); ok {
+			DefaultConfig.Logger.Info("found")
+			if nestedField.IsRepeated() {
+				DefaultConfig.Logger.Info("repeated", "name", nestedField.Name())
+				req.NestedRepeatedArgs = append(req.NestedRepeatedArgs, nestedField)
+			} else {
+				req.NestedArgs = append(req.NestedArgs, nestedField)
+			}
+			continue
+		}
+		req.Flags = append(req.Flags, field)
 	}
 
 	return req
@@ -72,6 +92,7 @@ func (request *Request) filename(prefix string) string {
 
 func (*Request) imports(gen *protogen.GeneratedFile) {
 	gen.QualifiedGoIdent(protogen.GoImportPath("github.com/spf13/cobra").Ident("cobra"))
+	gen.QualifiedGoIdent(protogen.GoImportPath("github.com/spf13/pflag").Ident("pflag"))
 	gen.QualifiedGoIdent(protogen.GoImportPath("os").Ident("os"))
 }
 

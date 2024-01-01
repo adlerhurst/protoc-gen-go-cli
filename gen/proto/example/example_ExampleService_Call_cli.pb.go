@@ -9,20 +9,22 @@ import (
 )
 
 var (
-	_ExampleMyNestedCallCmdRequest = new(NestedRequest)
-	ExampleMyNestedCallCmd         = &cobra.Command{
-		Use:   "mynestedcall",
-		Short: ``,
-		Long:  ``,
+	_ExampleMyCallCmdRequest = new(CallRequest)
+	ExampleMyCallCmd         = &cobra.Command{
+		Use: "mycall",
+		Short: ` I do absolutely nothing
+`,
+		Long: ` I do absolutely nothing
+`,
 
-		PreRun:             _ExampleMyNestedCallCmdRequest.ParseFlags,
-		Run:                runExampleMyNestedCallCmd,
+		PreRun:             _ExampleMyCallCmdRequest.ParseFlags,
+		Run:                runExampleMyCallCmd,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
 		DisableFlagParsing: true,
 	}
 )
 
-func runExampleMyNestedCallCmd(cmd *cobra.Command, args []string) {
+func runExampleMyCallCmd(cmd *cobra.Command, args []string) {
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		DefaultConfig.Logger.Info("flag", "name", f.Name, "value", f.Value.String(), "changed", f.Changed)
 	})
