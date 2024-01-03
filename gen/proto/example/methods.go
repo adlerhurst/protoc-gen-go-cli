@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	os "os"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -89,31 +89,31 @@ import (
 // 	}
 // }
 
-func (x *NestedRequest_Nested) ParseFlags(args []string) {
-	set := pflag.NewFlagSet("nested", pflag.ContinueOnError)
-	_Id := NewStringFlag(set, "id", ``)
-	_Depth := NewInt32Flag(set, "depth", ``)
+// func (x *NestedRequest_Nested) ParseFlags(args []string) {
+// 	set := pflag.NewFlagSet("nested", pflag.ContinueOnError)
+// 	_Id := NewStringFlag(set, "id", ``)
+// 	_Depth := NewInt32Flag(set, "depth", ``)
 
-	if err := set.Parse(args); err != nil {
-		DefaultConfig.Logger.Error("failed to parse flags", "cause", err)
-		os.Exit(1)
-	}
+// 	if err := set.Parse(args); err != nil {
+// 		DefaultConfig.Logger.Error("failed to parse flags", "cause", err)
+// 		os.Exit(1)
+// 	}
 
-	x.Id = *_Id.Value
-	x.Depth = *_Depth.Value
-}
+// 	x.Id = *_Id.Value
+// 	x.Depth = *_Depth.Value
+// }
 
-func (x *CallRequest_Nested) ParseFlags(args []string) {
-	set := pflag.NewFlagSet("nested", pflag.ContinueOnError)
-	Field := NewStringFlag(set, "field", ``)
+// func (x *CallRequest_Nested) ParseFlags(args []string) {
+// 	set := pflag.NewFlagSet("nested", pflag.ContinueOnError)
+// 	Field := NewStringFlag(set, "field", ``)
 
-	if err := set.Parse(args); err != nil {
-		DefaultConfig.Logger.Error("failed to parse flags", "cause", err)
-		os.Exit(1)
-	}
+// 	if err := set.Parse(args); err != nil {
+// 		DefaultConfig.Logger.Error("failed to parse flags", "cause", err)
+// 		os.Exit(1)
+// 	}
 
-	x.Field = *Field.Value
-}
+// 	x.Field = *Field.Value
+// }
 
 type argParser[T any] struct {
 	primitiveParser[T]
@@ -173,51 +173,85 @@ func (v *argParser[T]) Type() string {
 	return string(value.ProtoReflect().Type().Descriptor().FullName())
 }
 
-func NewStructFlag(set *pflag.FlagSet, name, usage string) (parser argParser[structpb.Struct]) {
+func NewStructFlag(set *pflag.FlagSet, name, usage string) *argParser[structpb.Struct] {
+	parser := new(argParser[structpb.Struct])
 	parser.Value = new(structpb.Struct)
-	set.Var(&parser, name, usage)
-
+	set.Var(parser, name, usage)
 	return parser
 }
 
-func NewStructSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]*structpb.Struct]) (parser argParser[[]*structpb.Struct]) {
+func NewStructSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]*structpb.Struct]) *argParser[[]*structpb.Struct] {
+	parser := new(argParser[[]*structpb.Struct])
 	parser.applyOpts(opts)
 	parser.Value = new([]*structpb.Struct)
-	set.Var(&parser, name, usage)
+	set.Var(parser, name, usage)
 	return parser
 }
 
-func NewAnyFlag(set *pflag.FlagSet, name, usage string) (parser argParser[anypb.Any]) {
+func NewAnyFlag(set *pflag.FlagSet, name, usage string) *argParser[anypb.Any] {
+	parser := new(argParser[anypb.Any])
 	// TODO: change to message
 	parser.Value = new(anypb.Any)
-	set.Var(&parser, name, usage)
-
+	set.Var(parser, name, usage)
 	return parser
 }
 
-func NewTimestampFlag(set *pflag.FlagSet, name, usage string) (parser argParser[timestamppb.Timestamp]) {
+func NewTimestampFlag(set *pflag.FlagSet, name, usage string) *argParser[timestamppb.Timestamp] {
+	parser := new(argParser[timestamppb.Timestamp])
 	parser.Value = new(timestamppb.Timestamp)
 	parser.customParser = timestampParser
-	set.Var(&parser, name, usage)
-
+	set.Var(parser, name, usage)
 	return parser
 }
 
-func NewTimestampSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]*timestamppb.Timestamp]) (parser argParser[[]*timestamppb.Timestamp]) {
+func NewTimestampSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]*timestamppb.Timestamp]) *argParser[[]*timestamppb.Timestamp] {
+	parser := new(argParser[[]*timestamppb.Timestamp])
 	parser.applyOpts(opts)
 	parser.Value = new([]*timestamppb.Timestamp)
 	parser.customParser = slicePtrParser[timestamppb.Timestamp](timestampParser)
-	set.Var(&parser, name, usage)
+	set.Var(parser, name, usage)
 	return parser
 }
 
 func timestampParser(field *timestamppb.Timestamp, arg string) error {
-	t, err := time.Parse(time.RFC3339, arg)
+	timestamp, err := time.Parse(time.RFC3339, arg)
 	if err != nil {
 		return err
 	}
-	*field = *timestamppb.New(t)
+	*field = *timestamppb.New(timestamp)
 	return nil
+}
+
+func NewDurationFlag(set *pflag.FlagSet, name, usage string) *argParser[durationpb.Duration] {
+	parser := new(argParser[durationpb.Duration])
+	parser.Value = new(durationpb.Duration)
+	parser.customParser = durationParser
+	set.Var(parser, name, usage)
+	return parser
+}
+
+func NewDurationSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]*durationpb.Duration]) *argParser[[]*durationpb.Duration] {
+	parser := new(argParser[[]*durationpb.Duration])
+	parser.applyOpts(opts)
+	parser.Value = new([]*durationpb.Duration)
+	parser.customParser = slicePtrParser[durationpb.Duration](durationParser)
+	set.Var(parser, name, usage)
+	return parser
+}
+
+func durationParser(field *durationpb.Duration, arg string) error {
+	duration, err := time.ParseDuration(arg)
+	if err != nil {
+		return err
+	}
+	*field = *durationpb.New(duration)
+	return nil
+}
+
+type enum interface {
+	~int32
+	Descriptor() protoreflect.EnumDescriptor
+	String() string
 }
 
 func NewEnumFlag[E enum](set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[E]) (parser argParser[E]) {
@@ -299,138 +333,162 @@ func enumParser[E enum](field *E, arg string) error {
 	return errors.New("unknown enum variable")
 }
 
-func NewStringFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[string]) (parser primitiveParser[string]) {
+func NewStringFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[string]) *primitiveParser[string] {
+	parser := new(primitiveParser[string])
 	parser.applyOpts(opts)
 	parser.Value = new(string)
 	set.StringVar(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewStringSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]string]) (parser primitiveParser[[]string]) {
+func NewStringSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]string]) *primitiveParser[[]string] {
+	parser := new(primitiveParser[[]string])
 	parser.applyOpts(opts)
 	parser.Value = new([]string)
 	set.StringSliceVar(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewBoolFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[bool]) (parser primitiveParser[bool]) {
+func NewBoolFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[bool]) *primitiveParser[bool] {
+	parser := new(primitiveParser[bool])
 	parser.applyOpts(opts)
 	parser.Value = new(bool)
 	set.BoolVar(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewBoolSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]bool]) (parser primitiveParser[[]bool]) {
+func NewBoolSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]bool]) *primitiveParser[[]bool] {
+	parser := new(primitiveParser[[]bool])
 	parser.applyOpts(opts)
 	parser.Value = new([]bool)
 	set.BoolSliceVar(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewInt32Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[int32]) (parser primitiveParser[int32]) {
+func NewInt32Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[int32]) *primitiveParser[int32] {
+	parser := new(primitiveParser[int32])
 	parser.applyOpts(opts)
 	parser.Value = new(int32)
 	set.Int32Var(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewInt32SliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]int32]) (parser primitiveParser[[]int32]) {
+func NewInt32SliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]int32]) *primitiveParser[[]int32] {
+	parser := new(primitiveParser[[]int32])
 	parser.applyOpts(opts)
 	parser.Value = new([]int32)
 	set.Int32SliceVar(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewUint32Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[uint32]) (parser primitiveParser[uint32]) {
+func NewSint32Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[int32]) *primitiveParser[int32] {
+	return NewInt32Flag(set, name, usage, opts...)
+}
+
+func NewSfixed32Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[int32]) *primitiveParser[int32] {
+	return NewInt32Flag(set, name, usage, opts...)
+}
+
+func NewUint32Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[uint32]) *primitiveParser[uint32] {
+	parser := new(primitiveParser[uint32])
 	parser.applyOpts(opts)
 	parser.Value = new(uint32)
 	set.Uint32Var(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewUint32SliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]uint]) (parser primitiveParser[[]uint]) {
+func NewFixed32Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[uint32]) *primitiveParser[uint32] {
+	return NewUint32Flag(set, name, usage, opts...)
+}
+
+func NewUint32SliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]uint]) *primitiveParser[[]uint] {
 	return newUintSliceFlag(set, name, usage, opts...)
 }
 
-func NewInt64Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[int64]) (parser primitiveParser[int64]) {
+func NewInt64Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[int64]) *primitiveParser[int64] {
+	parser := new(primitiveParser[int64])
 	parser.applyOpts(opts)
 	parser.Value = new(int64)
 	set.Int64Var(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewInt64SliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]int64]) (parser primitiveParser[[]int64]) {
+func NewSint64Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[int64]) *primitiveParser[int64] {
+	return NewInt64Flag(set, name, usage, opts...)
+}
+
+func NewSfixed64Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[int64]) *primitiveParser[int64] {
+	return NewInt64Flag(set, name, usage, opts...)
+}
+
+func NewInt64SliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]int64]) *primitiveParser[[]int64] {
+	parser := new(primitiveParser[[]int64])
 	parser.applyOpts(opts)
 	parser.Value = new([]int64)
 	set.Int64SliceVar(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewUint64Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[uint64]) (parser primitiveParser[uint64]) {
+func NewUint64Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[uint64]) *primitiveParser[uint64] {
+	parser := new(primitiveParser[uint64])
 	parser.applyOpts(opts)
 	parser.Value = new(uint64)
 	set.Uint64Var(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewUint64SliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]uint]) (parser primitiveParser[[]uint]) {
+func NewFixed64Flag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[uint64]) *primitiveParser[uint64] {
+	return NewUint64Flag(set, name, usage, opts...)
+}
+
+func NewUint64SliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]uint]) *primitiveParser[[]uint] {
 	return newUintSliceFlag(set, name, usage, opts...)
 }
 
-func newUintSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]uint]) (parser primitiveParser[[]uint]) {
+func newUintSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]uint]) *primitiveParser[[]uint] {
+	parser := new(primitiveParser[[]uint])
 	parser.applyOpts(opts)
 	parser.Value = new([]uint)
 	set.UintSliceVar(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewFloatFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[float32]) (parser primitiveParser[float32]) {
+func NewFloatFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[float32]) *primitiveParser[float32] {
+	parser := new(primitiveParser[float32])
 	parser.applyOpts(opts)
 	parser.Value = new(float32)
 	set.Float32Var(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewFloatSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]float32]) (parser primitiveParser[[]float32]) {
+func NewFloatSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]float32]) *primitiveParser[[]float32] {
+	parser := new(primitiveParser[[]float32])
 	parser.applyOpts(opts)
 	parser.Value = new([]float32)
 	set.Float32SliceVar(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewDoubleFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[float64]) (parser primitiveParser[float64]) {
+func NewDoubleFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[float64]) *primitiveParser[float64] {
+	parser := new(primitiveParser[float64])
 	parser.applyOpts(opts)
 	parser.Value = new(float64)
 	set.Float64Var(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewDoubleSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]float64]) (parser primitiveParser[[]float64]) {
+func NewDoubleSliceFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]float64]) *primitiveParser[[]float64] {
+	parser := new(primitiveParser[[]float64])
 	parser.applyOpts(opts)
 	parser.Value = new([]float64)
 	set.Float64SliceVar(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }
 
-func NewBytesFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]byte]) (parser primitiveParser[[]byte]) {
+func NewBytesFlag(set *pflag.FlagSet, name, usage string, opts ...primitiveParserOpt[[]byte]) *primitiveParser[[]byte] {
+	parser := new(primitiveParser[[]byte])
 	parser.applyOpts(opts)
 	parser.Value = new([]byte)
 	set.BytesBase64Var(parser.Value, name, parser.defaultValue, usage)
-
 	return parser
 }

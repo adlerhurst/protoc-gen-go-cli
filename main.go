@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/adlerhurst/protoc-gen-go-cli/types/v2"
+	"github.com/adlerhurst/protoc-gen-go-cli/types/v3"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -26,7 +26,16 @@ func main() {
 			if !file.Generate {
 				continue
 			}
-			_, err := generateFile(plugin, file)
+
+			for _, svc := range file.Services {
+				types.SetMessages(svc)
+
+				service := types.NewService(svc)
+				if err := service.Generate(plugin, file); err != nil {
+					return err
+				}
+			}
+			err := types.GenerateMessages(plugin, file)
 			if err != nil {
 				return err
 			}
@@ -34,17 +43,4 @@ func main() {
 
 		return nil
 	})
-}
-
-func generateFile(plugin *protogen.Plugin, file *protogen.File) (gen []*protogen.GeneratedFile, err error) {
-	for _, svc := range file.Services {
-		service := types.ServiceFromProto(svc)
-		serviceGen, err := service.Generate(plugin, file)
-		if err != nil {
-			return nil, err
-		}
-		gen = append(gen, serviceGen...)
-	}
-
-	return gen, nil
 }

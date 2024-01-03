@@ -137,12 +137,6 @@ func (f *BytesField) AddFlag(set *pflag.FlagSet) {
 	set.BytesBase64Var(f.Value, f.Name, f.defaultValue, f.Usage+" base64 (RFC 4648) encoded")
 }
 
-type enum interface {
-	~int32
-	Descriptor() protoreflect.EnumDescriptor
-	String() string
-}
-
 type EnumField[E enum] field[E]
 
 func (enum *EnumField[E]) AddFlag(set *pflag.FlagSet) {

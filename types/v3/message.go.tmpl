@@ -1,0 +1,51 @@
+{{range $key, $value := .}}
+
+func(x *{{$value.Message.GoIdent.GoName}}) ParseFlags(parent *pflag.FlagSet, args []string) {
+    set := pflag.NewFlagSet("{{$value.Message.GoIdent.GoName}}", pflag.ContinueOnError)
+    parent.AddFlagSet(set)
+
+    {{range $value.Flags -}}
+        {{if not .Message -}}
+    {{.FlagConstructor}}
+        {{end -}}
+    {{end}}
+
+    {{if $value.HasMessageFlags}}
+    flagIndexes := fieldIndexes(args, {{$value.NestedFlagNames}})
+    {{end}}
+
+    if err := set.Parse(args); err != nil {
+		DefaultConfig.Logger.Error("failed to parse flags", "cause", err)
+		os.Exit(1)
+	}
+
+    {{range $value.Flags -}}
+        {{if not .Message -}}
+    x.{{.Name}} = {{if not .IsPtr}}*{{end}}{{.VarName}}.Value
+        {{end -}}
+    {{end -}}
+
+    {{range $value.Flags}}
+        {{if .Message -}}
+            {{if not .IsList -}}
+    if flagIdx := flagIndexes.lastByName("{{.FieldNamePrivate}}"); flagIdx != nil {
+    	x.{{.Name}} = new({{.Message.Type}})
+    	x.{{.Name}}.ParseFlags(set, flagIdx.args)
+    }
+            {{end -}}
+        {{end -}}
+    {{end -}}
+
+    {{range $value.Flags}}
+        {{if .Message -}}
+            {{if .IsList -}}
+    for _, flagIdx := range flagIndexes.byName("{{.FieldNamePrivate}}") {
+    	x.{{.Name}} = append(x.{{.Name}}, new({{.Message.Type}}))
+    	x.{{.Name}}[len(x.{{.Name}})-1].ParseFlags(set, flagIdx.args)
+    }
+            {{end -}}
+        {{end -}}
+    {{end -}}
+}
+
+{{end}}

@@ -1,45 +1,47 @@
-package main
+package types
 
-import (
-	"bytes"
-	"fmt"
-	"log"
-	"strings"
+// package main
 
-	"github.com/spf13/viper"
-)
+// import (
+// 	"bytes"
+// 	"fmt"
+// 	"log"
+// 	"strings"
 
-type Config struct {
-	Options struct {
-		Cmd     string
-		Logging string
-		Root    string
-		Adler   string
-	}
-}
+// 	"github.com/spf13/viper"
+// )
 
-func main() {
-	//Configure the type of the configuration as JSON
-	viper.SetConfigType("json")
-	//Set the environment prefix as CONFIG
-	viper.SetEnvPrefix("CONFIG")
+// type Config struct {
+// 	Options struct {
+// 		Cmd     string
+// 		Logging string
+// 		Root    string
+// 		Adler   string
+// 	}
+// }
 
-	//Substitute the _ to .
-	replacer := strings.NewReplacer(".", "_")
-	viper.SetEnvKeyReplacer(replacer)
+// func main() {
+// 	//Configure the type of the configuration as JSON
+// 	viper.SetConfigType("json")
+// 	//Set the environment prefix as CONFIG
+// 	viper.SetEnvPrefix("CONFIG")
 
-	//Get the string that is set in the CONFIG_OPTIONS_VALUES environment variable
-	var jsonExample = []byte(viper.GetString("options.values"))
-	if err := viper.ReadConfig(bytes.NewBuffer(jsonExample)); err != nil {
-		log.Printf("failed to read: %v\n", err)
-	}
+// 	//Substitute the _ to .
+// 	replacer := strings.NewReplacer(".", "_")
+// 	viper.SetEnvKeyReplacer(replacer)
 
-	c := new(Config)
-	if err := viper.Unmarshal(c); err != nil {
-		log.Printf("failed to unmarshal: %v\n", err)
-	}
-	fmt.Printf("%#v\n", c.Options)
+// 	//Get the string that is set in the CONFIG_OPTIONS_VALUES environment variable
+// 	var jsonExample = []byte(viper.GetString("options.values"))
+// 	if err := viper.ReadConfig(bytes.NewBuffer(jsonExample)); err != nil {
+// 		log.Printf("failed to read: %v\n", err)
+// 	}
 
-	//Convert the sub-json string of the options field in map[string]string
-	fmt.Println(viper.GetStringMapString("options"))
-}
+// 	c := new(Config)
+// 	if err := viper.Unmarshal(c); err != nil {
+// 		log.Printf("failed to unmarshal: %v\n", err)
+// 	}
+// 	fmt.Printf("%#v\n", c.Options)
+
+// 	//Convert the sub-json string of the options field in map[string]string
+// 	fmt.Println(viper.GetStringMapString("options"))
+// }
